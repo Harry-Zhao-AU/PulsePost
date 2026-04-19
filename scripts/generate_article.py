@@ -150,6 +150,7 @@ BANNED (do not use):
 - Vague words like 'futuristic', 'innovative', 'seamless'
 
 The diagram must reflect the SPECIFIC components and flow from THIS article, not a generic AI system.
+Always include the article title "{topic['title']}" as a visible heading at the top of the image in clean bold white text.
 
 Return only the final DALL-E prompt, 2-3 sentences."""
 
