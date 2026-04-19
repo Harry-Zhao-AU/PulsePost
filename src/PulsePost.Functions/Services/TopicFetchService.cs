@@ -14,7 +14,6 @@ public class TopicFetchService(HttpClient httpClient, ILogger<TopicFetchService>
 
     private static readonly (string Name, string Url)[] CompanyFeeds =
     [
-        ("Anthropic", "https://www.anthropic.com/rss.xml"),
         ("OpenAI", "https://openai.com/blog/rss.xml"),
         ("Google DeepMind", "https://deepmind.google/blog/rss.xml"),
         ("Meta AI", "https://ai.meta.com/blog/rss/"),
