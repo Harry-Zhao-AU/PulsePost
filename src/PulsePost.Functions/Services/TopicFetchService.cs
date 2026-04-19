@@ -1,5 +1,6 @@
 using System.Net.Http.Json;
 using System.Text.Json;
+using System.Text.RegularExpressions;
 using System.Xml.Linq;
 using Microsoft.Extensions.Logging;
 
@@ -94,7 +95,7 @@ public class TopicFetchService(HttpClient httpClient, ILogger<TopicFetchService>
         {
             try
             {
-                var xml = await httpClient.GetStringAsync(url, ct);
+                var xml = SanitizeXml(await httpClient.GetStringAsync(url, ct));
                 var doc = XDocument.Parse(xml);
                 var ns = doc.Root?.GetDefaultNamespace();
                 var items = doc.Descendants("item").Take(3);
@@ -157,8 +158,8 @@ public class TopicFetchService(HttpClient httpClient, ILogger<TopicFetchService>
         {
             try
             {
-                var xml = await httpClient.GetStringAsync(
-                    $"https://www.youtube.com/feeds/videos.xml?channel_id={channelId}", ct);
+                var xml = SanitizeXml(await httpClient.GetStringAsync(
+                    $"https://www.youtube.com/feeds/videos.xml?channel_id={channelId}", ct));
                 var doc = XDocument.Parse(xml);
                 var ns = XNamespace.Get("http://www.w3.org/2005/Atom");
                 var media = XNamespace.Get("http://search.yahoo.com/mrss/");
@@ -186,7 +187,7 @@ public class TopicFetchService(HttpClient httpClient, ILogger<TopicFetchService>
         var results = new List<object>();
         try
         {
-            var xml = await httpClient.GetStringAsync("https://rss.arxiv.org/rss/cs.AI", ct);
+            var xml = SanitizeXml(await httpClient.GetStringAsync("https://rss.arxiv.org/rss/cs.AI", ct));
             var doc = XDocument.Parse(xml);
 
             foreach (var item in doc.Descendants("item").Take(8))
@@ -203,4 +204,7 @@ public class TopicFetchService(HttpClient httpClient, ILogger<TopicFetchService>
         catch (Exception ex) { logger.LogError(ex, "arXiv fetch failed"); }
         return results;
     }
+
+    internal static string SanitizeXml(string xml) =>
+        Regex.Replace(xml, @"&(?!(amp|lt|gt|quot|apos|#\d+|#x[0-9a-fA-F]+);)", "&amp;");
 }

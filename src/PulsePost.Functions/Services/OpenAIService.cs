@@ -38,7 +38,7 @@ public class OpenAIService(ILogger<OpenAIService> logger) : IOpenAIService
             }
             """;
 
-        return await CompleteAsync(prompt, ct);
+        return StripCodeFences(await CompleteAsync(prompt, ct));
     }
 
     public async Task<string> GenerateArticleAsync(string topicJson, CancellationToken ct = default)
@@ -78,7 +78,7 @@ public class OpenAIService(ILogger<OpenAIService> logger) : IOpenAIService
             Return JSON only: {"tweets": ["tweet 1", "tweet 2", ...]}
             """;
 
-        return await CompleteAsync(prompt, ct);
+        return StripCodeFences(await CompleteAsync(prompt, ct));
     }
 
     public async Task<string> GenerateImagePromptAsync(string article, string topicTitle, CancellationToken ct = default)
@@ -128,5 +128,12 @@ public class OpenAIService(ILogger<OpenAIService> logger) : IOpenAIService
             new ChatCompletionOptions { Temperature = 0.7f },
             ct);
         return response.Value.Content[0].Text;
+    }
+
+    internal static string StripCodeFences(string text)
+    {
+        var start = text.IndexOf('{');
+        var end = text.LastIndexOf('}');
+        return start >= 0 && end > start ? text[start..(end + 1)] : text.Trim();
     }
 }
