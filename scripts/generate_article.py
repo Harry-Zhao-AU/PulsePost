@@ -122,21 +122,26 @@ Return JSON only:
 
 
 def generate_image_prompt(topic: dict, article: str) -> str:
-    prompt = f"""Generate a specific DALL-E image prompt for a blog cover image.
+    prompt = f"""You are a creative director generating a DALL-E cover image prompt for a tech blog article.
 
 Article title: {topic['title']}
-Article summary: {article[:400]}
+Article content (first 600 chars): {article[:600]}
 
-Rules:
-- Describe CONCRETE visual elements directly related to this specific topic — no generic "glowing nodes" or "circuits"
-- Think about what a designer would actually draw to represent THIS concept
-- Example for "MCP protocol": "A diagram showing a phone plugging into multiple app icons via a single universal connector, like a USB-C port for AI, clean flat design, dark background"
-- Example for "RAG systems": "A librarian robot pulling books from shelves and handing pages to a person, minimalist illustration, dark teal background"
-- Include: subject, action or metaphor, art style, colour palette, mood
-- No text or letters in the image
-- Max 2 sentences
+Step 1 — Identify the single most important CONCRETE concept in this article (e.g. "context window", "tool calling", "parallel agents", "token prediction"). Write it down.
 
-Return the prompt only."""
+Step 2 — Think of a real-world PHYSICAL METAPHOR for that concept (e.g. context window → a filing cabinet with limited drawer space, tool calling → a chef calling out orders to kitchen stations, parallel agents → a beehive where each bee has a specific job).
+
+Step 3 — Write a DALL-E prompt that visualises ONLY that metaphor.
+
+BANNED words and ideas (do not use any of these):
+- developer, programmer, person at desk, human figure
+- glowing nodes, circuits, neural network diagram
+- puzzle pieces connecting
+- generic "futuristic" or "AI" imagery
+
+The prompt must describe something a reader could look at and immediately think of the article topic.
+
+Format: Return only the final DALL-E prompt, 2-3 sentences, no preamble."""
 
     response = client.chat.completions.create(
         model=DEPLOYMENT,
