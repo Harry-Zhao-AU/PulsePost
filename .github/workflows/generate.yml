@@ -1,0 +1,45 @@
+name: Generate Article
+
+on:
+  schedule:
+    - cron: '0 22 * * 0'  # Sunday 8am AEST (UTC+10)
+  workflow_dispatch:       # Manual trigger
+
+jobs:
+  generate:
+    runs-on: ubuntu-latest
+    permissions:
+      issues: write
+      contents: read
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+          cache: 'pip'
+          cache-dependency-path: scripts/requirements.txt
+
+      - name: Install dependencies
+        run: pip install -r scripts/requirements.txt
+
+      - name: Fetch trending topics
+        id: fetch
+        run: python scripts/fetch_topics.py > topics.json
+        env:
+          GH_PAT: ${{ secrets.GH_PAT }}
+
+      - name: Generate article
+        run: python scripts/generate_article.py < topics.json > draft.json
+        env:
+          AZURE_OPENAI_ENDPOINT: ${{ secrets.AZURE_OPENAI_ENDPOINT }}
+          AZURE_OPENAI_KEY: ${{ secrets.AZURE_OPENAI_KEY }}
+          AZURE_OPENAI_DEPLOYMENT: ${{ secrets.AZURE_OPENAI_DEPLOYMENT }}
+
+      - name: Create issue and notify Telegram
+        run: python scripts/create_issue.py < draft.json
+        env:
+          GH_PAT: ${{ secrets.GH_PAT }}
+          TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
+          TELEGRAM_CHAT_ID: ${{ secrets.TELEGRAM_CHAT_ID }}
