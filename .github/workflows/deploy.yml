@@ -9,20 +9,13 @@ on:
 
 jobs:
   terraform:
-    runs-on: ubuntu-latest
+    runs-on: self-hosted
     steps:
       - uses: actions/checkout@v4
-
-      - uses: hashicorp/setup-terraform@v3
 
       - name: Terraform Init
         run: terraform init
         working-directory: terraform/
-        env:
-          ARM_SUBSCRIPTION_ID: ${{ secrets.AZURE_SUBSCRIPTION_ID }}
-          ARM_TENANT_ID: ${{ secrets.AZURE_TENANT_ID }}
-          ARM_CLIENT_ID: ${{ secrets.AZURE_CLIENT_ID }}
-          ARM_CLIENT_SECRET: ${{ secrets.AZURE_CLIENT_SECRET }}
 
       - name: Terraform Apply
         run: |
@@ -33,25 +26,15 @@ jobs:
             -var="azure_openai_endpoint=${{ secrets.AZURE_OPENAI_ENDPOINT }}" \
             -var="azure_openai_key=${{ secrets.AZURE_OPENAI_KEY }}"
         working-directory: terraform/
-        env:
-          ARM_SUBSCRIPTION_ID: ${{ secrets.AZURE_SUBSCRIPTION_ID }}
-          ARM_TENANT_ID: ${{ secrets.AZURE_TENANT_ID }}
-          ARM_CLIENT_ID: ${{ secrets.AZURE_CLIENT_ID }}
-          ARM_CLIENT_SECRET: ${{ secrets.AZURE_CLIENT_SECRET }}
 
   deploy-functions:
     needs: terraform
-    runs-on: ubuntu-latest
+    runs-on: self-hosted
     steps:
       - uses: actions/checkout@v4
 
-      - uses: actions/setup-dotnet@v4
-        with:
-          dotnet-version: '10.0.x'
-
       - name: Build
-        run: dotnet publish src/PulsePost.Functions/PulsePost.Functions.csproj \
-          -c Release -o publish/
+        run: dotnet publish src/PulsePost.Functions/PulsePost.Functions.csproj -c Release -o publish/
 
       - name: Deploy to Azure Functions
         uses: Azure/functions-action@v1
