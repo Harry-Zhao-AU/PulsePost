@@ -2,7 +2,10 @@
 
 ## What This Project Does
 
-AI-powered article pipeline. Fetches trending AI topics, generates articles in Harry's voice via Azure OpenAI, sends drafts to Telegram for approval, then publishes to the blog repo.
+AI-powered article pipeline. Fetches trending AI topics, generates articles in Harry's voice via Azure OpenAI, sends drafts for approval, then publishes to the blog repo.
+
+- **Phase 1 (current)** — GitHub Actions + Python scripts. Approval via GitHub Issue comments. Telegram is notification-only.
+- **Phase 2 (built)** — Azure Functions + Service Bus. Fully event-driven. Approval via Telegram commands directly. Code complete, deploy via `deploy.yml` and Bicep.
 
 ## Tech Stack
 
@@ -17,7 +20,13 @@ AI-powered article pipeline. Fetches trending AI topics, generates articles in H
 
 ```bash
 # Build
-dotnet publish src/PulsePost.Functions/PulsePost.Functions.csproj -c Release -o publish/
+dotnet publish PulsePost.sln --project src/PulsePost.Functions/PulsePost.Functions.csproj -c Release -o publish/
+
+# Test
+dotnet test PulsePost.sln
+
+# Build all (no publish)
+dotnet build PulsePost.sln
 
 # Deploy infra (from Cloud Shell or hotspot — corporate firewall blocks management.azure.com)
 az group create --name pulsepost-rg --location australiaeast
@@ -34,12 +43,14 @@ az deployment group create --resource-group pulsepost-rg --template-file bicep/m
 
 ## CI/CD
 
-| Workflow | Trigger | Runner |
+| Workflow | Trigger | Phase |
 |---|---|---|
-| `deploy.yml` | `src/**` push | `ubuntu-latest` |
-| `infra.yml` | `bicep/**` push | `self-hosted` (uses local az login) |
-| `generate.yml` | Sunday 8am AEST | `ubuntu-latest` |
-| `handle-approval.yml` | Issue comment | `ubuntu-latest` |
+| `generate.yml` | Sunday 8am AEST (cron) + `workflow_dispatch` | 1 — current |
+| `handle-approval.yml` | GitHub Issue comment (`pending-approval` label) | 1 — current |
+| `deploy.yml` | `src/**` push to `main` | 2 — planned |
+| `infra.yml` | **Manual** — Azure Portal Cloud Shell only | 2 — planned |
+
+> **`infra.yml` is not auto-triggered.** Run Bicep deployments manually from Azure Portal Cloud Shell — corporate firewall blocks `management.azure.com` from GitHub-hosted runners.
 
 ## Azure Resources
 
