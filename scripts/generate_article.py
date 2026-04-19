@@ -141,7 +141,7 @@ Steps:
 Good examples:
 - Workflow: "A left-to-right flowchart: User Request → Orchestrator → Tool Caller → External API → Response. Dark navy background, white boxes, teal arrows, flat technical style."
 - Architecture: "Three vertical layers stacked: top layer labeled 'API Gateway', middle labeled 'Event Bus with Kafka', bottom labeled 'Microservices'. Connecting arrows between layers. Dark background, monochrome with amber highlights."
-- Pillars: "Four stone columns side by side, each labeled: Observability, Resilience, Scalability, Security. Clean flat illustration, dark slate background, white serif labels."
+- Pillars: "Four labeled rectangular modules arranged side by side: Observability, Resilience, Scalability, Security. Each module is a clean card with an icon above the label. Dark slate background, white text, flat design."
 
 BANNED (do not use):
 - People, developers, human figures
