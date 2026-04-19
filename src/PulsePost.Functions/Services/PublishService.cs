@@ -26,6 +26,7 @@ public class PublishService(HttpClient httpClient, ILogger<PublishService> logge
             title: "{title}"
             date: {date}
             categories: [AI, Engineering]
+            channel: trends
             ---
 
             """;
