@@ -21,21 +21,21 @@ public class OpenAIService(ILogger<OpenAIService> logger) : IOpenAIService
 
     public async Task<string> SelectTopicAsync(string topicsJson, CancellationToken ct = default)
     {
-        var prompt = $"""
+        var prompt = $$"""
             You are a content strategist for Harry Zhao, a Senior Software Engineer in Melbourne
             specialising in AI-augmented systems, distributed platforms, and cloud-native services.
 
             Here are this week's trending AI topics from multiple sources:
-            {topicsJson}
+            {{topicsJson}}
 
             Select the single most interesting and timely topic for a senior engineering audience.
             Return JSON only:
-            {{
+            {
               "title": "article title",
               "angles": ["angle 1", "angle 2", "angle 3"],
               "why_now": "one sentence on why this is timely",
-              "sources": [{{"name": "source title", "url": "https://...", "from": "source type"}}]
-            }}
+              "sources": [{"name": "source title", "url": "https://...", "from": "source type"}]
+            }
             """;
 
         return await CompleteAsync(prompt, ct);
@@ -62,11 +62,11 @@ public class OpenAIService(ILogger<OpenAIService> logger) : IOpenAIService
 
     public async Task<string> GenerateXThreadAsync(string article, CancellationToken ct = default)
     {
-        var prompt = $"""
+        var prompt = $$"""
             Convert this article into an X (Twitter) thread for Harry Zhao.
 
             Article:
-            {article}
+            {{article}}
 
             Rules:
             - Tweet 1: compelling hook, max 280 chars, no hashtags
@@ -75,7 +75,7 @@ public class OpenAIService(ILogger<OpenAIService> logger) : IOpenAIService
             - Write in Harry's voice: direct, technical, no fluff
             - No emojis except sparingly
 
-            Return JSON only: {{"tweets": ["tweet 1", "tweet 2", ...]}}
+            Return JSON only: {"tweets": ["tweet 1", "tweet 2", ...]}
             """;
 
         return await CompleteAsync(prompt, ct);
