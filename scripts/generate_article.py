@@ -46,7 +46,9 @@ Return JSON only:
   "title": "article title",
   "angles": ["angle 1", "angle 2", "angle 3"],
   "why_now": "one sentence on why this is timely",
-  "sources_used": ["hackernews", "github", "arxiv"]
+  "sources": [
+    {{"name": "source title", "url": "https://...", "from": "hackernews|github|arxiv"}}
+  ]
 }}"""
 
     response = client.chat.completions.create(

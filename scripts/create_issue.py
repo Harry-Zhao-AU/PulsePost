@@ -41,7 +41,8 @@ def create_github_issue(draft: dict) -> tuple[int, str]:
 ---
 
 ## Sources Used
-{', '.join(topic['sources_used'])}
+
+{chr(10).join(f"- [{s['name']}]({s['url']}) — {s['from']}" for s in topic.get('sources', []))}
 
 **Why now:** {topic['why_now']}
 
@@ -66,7 +67,7 @@ def send_telegram(draft: dict, issue_number: int, issue_url: str):
     message = (
         f"📝 *New Draft Ready*\n\n"
         f"*Topic:* {topic['title']}\n\n"
-        f"*Sources:* {', '.join(topic['sources_used'])}\n\n"
+        f"*Sources:*\n" + "\n".join(f"• [{s['name']}]({s['url']})" for s in topic.get('sources', [])) + "\n\n"
         f"*X Thread Preview:*\n{preview_tweets}\n\n"
         f"*Image Prompt:*\n`{draft['image_prompt'][:150]}...`\n\n"
         f"[Review Issue #{issue_number}]({issue_url})\n\n"
