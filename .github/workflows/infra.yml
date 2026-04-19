@@ -1,0 +1,28 @@
+name: Deploy Infrastructure
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'bicep/**'
+
+jobs:
+  bicep:
+    runs-on: self-hosted
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Create Resource Group
+        run: az group create --name pulsepost-rg --location australiaeast
+
+      - name: Deploy Bicep
+        run: |
+          az deployment group create \
+            --resource-group pulsepost-rg \
+            --template-file bicep/main.bicep \
+            --parameters \
+              telegramBotToken="${{ secrets.TELEGRAM_BOT_TOKEN }}" \
+              telegramChatId="${{ secrets.TELEGRAM_CHAT_ID }}" \
+              githubPat="${{ secrets.GH_PAT }}" \
+              azureOpenAiEndpoint="${{ secrets.AZURE_OPENAI_ENDPOINT }}" \
+              azureOpenAiKey="${{ secrets.AZURE_OPENAI_KEY }}"

@@ -13,6 +13,9 @@ draft.json
 .env
 local.settings.json
 
+# Bicep
+bicep/parameters.json
+
 # Terraform
 terraform/.terraform/
 terraform/*.tfstate

@@ -5,31 +5,10 @@ on:
     branches: [main]
     paths:
       - 'src/**'
-      - 'terraform/**'
 
 jobs:
-  terraform:
-    runs-on: self-hosted
-    steps:
-      - uses: actions/checkout@v4
-
-      - name: Terraform Init
-        run: terraform init
-        working-directory: terraform/
-
-      - name: Terraform Apply
-        run: |
-          terraform apply -auto-approve \
-            -var="telegram_bot_token=${{ secrets.TELEGRAM_BOT_TOKEN }}" \
-            -var="telegram_chat_id=${{ secrets.TELEGRAM_CHAT_ID }}" \
-            -var="github_pat=${{ secrets.GH_PAT }}" \
-            -var="azure_openai_endpoint=${{ secrets.AZURE_OPENAI_ENDPOINT }}" \
-            -var="azure_openai_key=${{ secrets.AZURE_OPENAI_KEY }}"
-        working-directory: terraform/
-
   deploy-functions:
-    needs: terraform
-    runs-on: self-hosted
+    runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
 
