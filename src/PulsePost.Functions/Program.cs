@@ -1,3 +1,4 @@
+using Azure.Messaging.ServiceBus;
 using Microsoft.Azure.Functions.Worker;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
@@ -15,6 +16,7 @@ var host = new HostBuilder()
         services.AddSingleton<ITopicFetchService, TopicFetchService>();
         services.AddSingleton<IDraftStorageService, DraftStorageService>();
         services.AddSingleton<IPublishService, PublishService>();
+        services.AddSingleton(_ => new ServiceBusClient(Environment.GetEnvironmentVariable("SERVICE_BUS_CONNECTION")));
     })
     .Build();
 
