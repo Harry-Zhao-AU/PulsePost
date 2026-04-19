@@ -1,3 +1,8 @@
+# .NET build output
+bin/
+obj/
+publish/
+
 # Python
 __pycache__/
 *.py[cod]
