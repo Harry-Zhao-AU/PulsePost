@@ -17,7 +17,6 @@ public class TopicFetchService(HttpClient httpClient, ILogger<TopicFetchService>
         ("OpenAI", "https://openai.com/blog/rss.xml"),
         ("Google DeepMind", "https://deepmind.google/blog/rss.xml"),
         ("Meta AI", "https://ai.meta.com/blog/rss/"),
-        ("Microsoft AI", "https://blogs.microsoft.com/ai/feed/"),
     ];
 
     private static readonly (string Name, string ChannelId)[] YoutubeChannels =
