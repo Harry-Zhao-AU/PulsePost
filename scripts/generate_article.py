@@ -122,26 +122,31 @@ Return JSON only:
 
 
 def generate_image_prompt(topic: dict, article: str) -> str:
-    prompt = f"""You are a creative director generating a DALL-E cover image prompt for a tech blog article.
+    prompt = f"""You are a technical illustrator generating a DALL-E cover image for a software engineering blog.
 
 Article title: {topic['title']}
 Article content (first 600 chars): {article[:600]}
 
-Step 1 — Identify the single most important CONCRETE concept in this article (e.g. "context window", "tool calling", "parallel agents", "token prediction"). Write it down.
+Your job: Extract the CORE WORKFLOW or ARCHITECTURE described in this article and visualise it as a clean technical diagram or system illustration.
 
-Step 2 — Think of a real-world PHYSICAL METAPHOR for that concept (e.g. context window → a filing cabinet with limited drawer space, tool calling → a chef calling out orders to kitchen stations, parallel agents → a beehive where each bee has a specific job).
+Steps:
+1. Identify the key components, steps, or layers in the system/workflow described
+2. Describe how they connect or flow (e.g. "request flows left to right", "three layers stacked vertically")
+3. Write a DALL-E prompt that renders this as a clean architectural diagram
 
-Step 3 — Write a DALL-E prompt that visualises ONLY that metaphor.
+Good examples:
+- "A clean architecture diagram showing three horizontal layers: a user request at top, a middle orchestration layer with labeled boxes for Tool Caller, Memory, and Planner, and a bottom layer of external APIs. Dark background, white and teal labels, minimalist flat design."
+- "A flowchart showing a message entering an LLM, branching into two parallel paths labeled Read and Write, then merging at a response node. Monochrome with amber highlights, dark navy background."
 
-BANNED words and ideas (do not use any of these):
-- developer, programmer, person at desk, human figure
-- glowing nodes, circuits, neural network diagram
-- puzzle pieces connecting
-- generic "futuristic" or "AI" imagery
+BANNED (do not use):
+- People, developers, human figures
+- Glowing nodes, generic circuits, neural network blobs
+- Puzzle pieces, gears, lightbulbs
+- Vague words like 'futuristic', 'innovative', 'seamless'
 
-The prompt must describe something a reader could look at and immediately think of the article topic.
+The diagram must reflect the SPECIFIC components and flow from THIS article, not a generic AI system.
 
-Format: Return only the final DALL-E prompt, 2-3 sentences, no preamble."""
+Return only the final DALL-E prompt, 2-3 sentences."""
 
     response = client.chat.completions.create(
         model=DEPLOYMENT,
