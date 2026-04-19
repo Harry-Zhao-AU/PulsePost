@@ -1,7 +1,8 @@
-"""Fetches trending AI topics from HN, company blogs, Reddit, and arXiv."""
+"""Fetches trending AI topics from HN, company blogs, Reddit, YouTube, and arXiv."""
 
 import json
 import os
+import re
 import sys
 import time
 import feedparser
@@ -20,6 +21,16 @@ COMPANY_FEEDS = [
 ]
 
 REDDIT_SUBREDDITS = ["MachineLearning", "LocalLLaMA"]
+
+YOUTUBE_CHANNELS = [
+    {"name": "Andrej Karpathy",   "channel_id": "UCnUYZLuoy1rq1aVMwx4aTzw"},
+    {"name": "Yannic Kilcher",    "channel_id": "UCZHmQk67mSJgfCCTn7xBfew"},
+    {"name": "Two Minute Papers", "channel_id": "UCbfYPyITQ-7l4upoX8nvctg"},
+    {"name": "AI Explained",      "channel_id": "UCNJ1Ymd5yFuUPtn21xtRbbw"},
+    {"name": "Matt Wolfe",        "channel_id": "UCb_X2sCuGPRMf4_A3K0H_cw"},
+    {"name": "Google DeepMind",   "channel_id": "UCP7jMXSY2xbc3KCAE0MHQ-A"},
+    {"name": "Lex Fridman",       "channel_id": "UCSHZKyawb77ixDdsGog4iWA"},
+]
 
 GH_HEADERS = {
     "Authorization": f"Bearer {os.environ['GH_PAT']}",
@@ -98,6 +109,44 @@ def fetch_reddit():
     return sorted(results, key=lambda x: x["score"], reverse=True)[:5]
 
 
+def get_transcript(video_id: str) -> str:
+    try:
+        from youtube_transcript_api import YouTubeTranscriptApi
+        transcript = YouTubeTranscriptApi.get_transcript(video_id)
+        return " ".join(t["text"] for t in transcript)[:500]
+    except Exception:
+        return ""
+
+
+def fetch_youtube():
+    results = []
+    for channel in YOUTUBE_CHANNELS:
+        try:
+            feed = feedparser.parse(
+                f"https://www.youtube.com/feeds/videos.xml?channel_id={channel['channel_id']}"
+            )
+            for entry in feed.entries[:2]:
+                video_id_match = re.search(r"v=([^&]+)", entry.get("link", ""))
+                video_id = video_id_match.group(1) if video_id_match else None
+
+                description = entry.get("summary", "")[:300]
+                transcript = get_transcript(video_id) if video_id and not description else ""
+                content = transcript if transcript and len(description) < 100 else description
+
+                results.append({
+                    "source": "youtube",
+                    "channel": channel["name"],
+                    "title": entry.get("title", ""),
+                    "url": entry.get("link", ""),
+                    "content": content,
+                    "published": entry.get("published", ""),
+                })
+        except Exception as e:
+            print(f"Failed to fetch YouTube channel {channel['name']}: {e}", file=sys.stderr)
+
+    return results
+
+
 def fetch_arxiv():
     feed = feedparser.parse("https://rss.arxiv.org/rss/cs.AI")
     return [
@@ -132,6 +181,9 @@ if __name__ == "__main__":
     print("Fetching Reddit (r/MachineLearning, r/LocalLLaMA)...", file=sys.stderr)
     reddit = fetch_reddit()
 
+    print("Fetching YouTube channels...", file=sys.stderr)
+    youtube = fetch_youtube()
+
     print("Fetching arXiv...", file=sys.stderr)
     arxiv = fetch_arxiv()
 
@@ -142,6 +194,7 @@ if __name__ == "__main__":
         "hackernews": hn,
         "company_blogs": company,
         "reddit": reddit,
+        "youtube": youtube,
         "arxiv": arxiv,
         "existing_posts": existing,
     }

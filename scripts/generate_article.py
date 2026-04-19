@@ -35,6 +35,9 @@ Official Company Blogs (Anthropic, OpenAI, Google DeepMind, Meta AI, Microsoft A
 Reddit (r/MachineLearning, r/LocalLLaMA):
 {json.dumps(topics['reddit'], indent=2)}
 
+YouTube (Andrej Karpathy, Yannic Kilcher, Two Minute Papers, AI Explained, Matt Wolfe, DeepMind, Lex Fridman):
+{json.dumps(topics['youtube'], indent=2)}
+
 arXiv:
 {json.dumps(topics['arxiv'], indent=2)}
 
