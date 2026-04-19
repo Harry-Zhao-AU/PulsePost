@@ -2,14 +2,66 @@
 
 AI-powered article pipeline — monitors trending AI topics, generates articles in your voice, seeks approval via Telegram, and publishes to your blog automatically.
 
-## How It Works
+## Full Flow
 
-1. **Trigger** — runs every Sunday 8am AEST (or manually via `workflow_dispatch`)
-2. **Fetch** — pulls trending AI topics from Hacker News, GitHub, and arXiv
-3. **Generate** — Azure OpenAI selects the best topic and writes a full article + X thread + image prompt
-4. **Notify** — sends draft preview to Telegram with a link to review
-5. **Approve** — comment `APPROVE` / `REJECT` / `EDIT <feedback>` on the GitHub Issue
-6. **Publish** — on approval, opens a PR to the blog repo and sends X thread via Telegram
+```
+Every Sunday 8am AEST (or /generate via Telegram)
+        │
+        ▼
+generate.yml (GitHub Actions)
+  ├── fetch_topics.py    → scrapes HN, GitHub trending, arXiv
+  ├── generate_article.py → Azure OpenAI selects topic, writes article + X thread + image prompt
+  └── create_issue.py    → creates GitHub Issue + sends Telegram preview
+        │
+        ▼
+You receive Telegram message with draft preview
+        │
+        ├── Reply: /generate        → triggers full pipeline manually
+        ├── Reply: APPROVE          → publishes article
+        ├── Reply: REJECT           → discards draft
+        └── Reply: EDIT <feedback>  → rewrites and re-sends
+        │
+        ▼ (APPROVE)
+TelegramWebhook (Azure Function)
+  └── sends ServiceBus message → post-article queue
+        │
+        ▼
+PostArticle (Azure Function)
+  └── opens PR to blog repo + sends X thread via Telegram
+```
+
+## Architecture
+
+```
+GitHub Actions (scheduled/manual)
+      │
+      ▼
+Python scripts → Azure OpenAI → GitHub Issue + Telegram
+
+Telegram Bot
+      │ (webhook)
+      ▼
+Azure Function App (pulsepost-func)
+  ├── TelegramWebhook  — receives Telegram commands
+  ├── FetchTopics      — Service Bus triggered, fetches topics
+  ├── GenerateArticle  — Service Bus triggered, generates article
+  └── PostArticle      — Service Bus triggered, publishes to blog
+
+Azure Infrastructure
+  ├── Service Bus (pulsepost-bus)  — 3 queues: fetch-topics, generate-article, post-article
+  ├── Storage Account (pulsepostsa) — ArticleDrafts table
+  ├── Function App (pulsepost-func) — .NET 8 isolated, Consumption (Y1)
+  └── Application Insights (pulsepost-ai)
+```
+
+## CI/CD
+
+| Workflow | Trigger | Purpose |
+|---|---|---|
+| `generate.yml` | Sunday 8am AEST + manual | Runs article generation pipeline |
+| `handle-approval.yml` | GitHub Issue comment | Handles approve/reject/edit |
+| `deploy.yml` | Push to `src/**` | Deploys Function App code |
+| `infra.yml` | Push to `bicep/**` | Deploys Azure infrastructure |
 
 ## Secrets Required
 
@@ -18,45 +70,54 @@ AI-powered article pipeline — monitors trending AI topics, generates articles 
 | `GH_PAT` | GitHub Personal Access Token (repo scope) |
 | `AZURE_OPENAI_ENDPOINT` | Azure OpenAI instance URL |
 | `AZURE_OPENAI_KEY` | Azure OpenAI API key |
-| `AZURE_OPENAI_DEPLOYMENT` | GPT-4o deployment name |
-| `TELEGRAM_BOT_TOKEN` | Telegram bot token |
+| `AZURE_OPENAI_DEPLOYMENT` | GPT-4o deployment name (default: `gpt-4o`) |
+| `TELEGRAM_BOT_TOKEN` | Telegram bot token from @BotFather |
 | `TELEGRAM_CHAT_ID` | Your Telegram chat ID |
+| `AZURE_PUBLISH_PROFILE` | Publish profile from `pulsepost-func` Azure Portal |
 
 ## Setup
 
-1. Fork / create this repo on GitHub
+1. Deploy Azure infrastructure via Cloud Shell:
+   ```bash
+   az group create --name pulsepost-rg --location australiaeast
+   az deployment group create --resource-group pulsepost-rg --template-file bicep/main.bicep --parameters @parameters.json
+   ```
 2. Add all secrets under `Settings → Secrets → Actions`
-3. Create labels `pending-approval`, `approved`, `rejected` in the repo
-4. Enable Issues in repo settings
-5. Trigger manually via `Actions → Generate Article → Run workflow` to test
+3. Download publish profile from Azure Portal → `pulsepost-func` → Get publish profile → add as `AZURE_PUBLISH_PROFILE`
+4. Register Telegram webhook:
+   ```bash
+   curl -s "https://api.telegram.org/bot<TOKEN>/setWebhook" -d "url=https://pulsepost-func.azurewebsites.net/api/TelegramWebhook"
+   ```
+5. Send `/generate` to your Telegram bot to test
 
-## Approval Commands
-
-Comment on the generated GitHub Issue:
+## Telegram Commands
 
 | Command | Action |
 |---|---|
-| `APPROVE` | Creates blog PR + sends X thread to Telegram |
-| `REJECT` | Closes issue, discards draft |
-| `EDIT make it more technical` | Rewrites article with your feedback, re-notifies |
+| `/generate` | Start pipeline — fetch topics → generate article → send draft |
+| `APPROVE` | Publish latest pending draft |
+| `REJECT` | Discard latest pending draft |
+| `EDIT <feedback>` | Rewrite with feedback, e.g. `EDIT make it more technical` |
 
 ## Project Structure
 
 ```
 PulsePost/
-├── scripts/
-│   ├── fetch_topics.py       # HN + GitHub + arXiv fetcher
-│   ├── generate_article.py   # Azure OpenAI article generator
-│   ├── create_issue.py       # GitHub Issue + Telegram notifier
-│   ├── handle_approval.py    # Approve / reject / edit handler
-│   └── requirements.txt
+├── src/PulsePost.Functions/   # Azure Functions (.NET 8 isolated)
+│   ├── Functions/             # TelegramWebhook, FetchTopics, GenerateArticle, PostArticle, Scheduler
+│   ├── Services/              # OpenAI, Telegram, TopicFetch, DraftStorage, Publish
+│   └── host.json
+├── scripts/                   # Python pipeline (GitHub Actions)
+│   ├── fetch_topics.py
+│   ├── generate_article.py
+│   ├── create_issue.py
+│   └── handle_approval.py
+├── bicep/                     # Azure infrastructure (Bicep)
+│   └── main.bicep
 ├── .github/workflows/
-│   ├── generate.yml          # Scheduled + manual trigger
-│   └── handle-approval.yml   # Issue comment handler
-├── terraform/                # Phase 2 — Azure infrastructure
-└── REQUIREMENTS.md
+│   ├── generate.yml
+│   ├── handle-approval.yml
+│   ├── deploy.yml
+│   └── infra.yml
+└── terraform/                 # Legacy — replaced by Bicep
 ```
-
-## Phase 2
-
-Phase 2 migrates the pipeline to Azure Functions + Service Bus with full Terraform provisioning. See `REQUIREMENTS.md` for the full architecture.
