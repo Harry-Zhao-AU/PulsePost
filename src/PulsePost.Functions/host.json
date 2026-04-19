@@ -6,5 +6,10 @@
         "isEnabled": true
       }
     }
+  },
+  "extensions": {
+    "serviceBus": {
+      "maxAutoLockRenewalDuration": "00:10:00"
+    }
   }
 }
