@@ -69,7 +69,7 @@ def send_telegram(draft: dict, issue_number: int, issue_url: str):
         f"*Topic:* {topic['title']}\n\n"
         f"*Sources:*\n" + "\n".join(f"• [{s['name']}]({s['url']})" for s in topic.get('sources', [])) + "\n\n"
         f"*X Thread Preview:*\n{preview_tweets}\n\n"
-        f"*Image Prompt:*\n`{draft['image_prompt'][:150]}...`\n\n"
+        f"*Image Prompt:*\n`{draft['image_prompt']}`\n\n"
         f"[Review Issue #{issue_number}]({issue_url})\n\n"
         f"Reply on GitHub: `APPROVE` / `REJECT` / `EDIT <feedback>`"
     )
