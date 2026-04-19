@@ -121,13 +121,22 @@ Return JSON only:
     return json.loads(response.choices[0].message.content)["tweets"]
 
 
-def generate_image_prompt(topic: dict) -> str:
-    prompt = f"""Generate a DALL-E image prompt for a blog cover image about: {topic['title']}
+def generate_image_prompt(topic: dict, article: str) -> str:
+    prompt = f"""Generate a specific DALL-E image prompt for a blog cover image.
 
-Style: minimalist tech aesthetic, dark background, professional, no text in image.
-Must be relevant to the topic concept.
+Article title: {topic['title']}
+Article summary: {article[:400]}
 
-Return the prompt only, no explanation."""
+Rules:
+- Describe CONCRETE visual elements directly related to this specific topic — no generic "glowing nodes" or "circuits"
+- Think about what a designer would actually draw to represent THIS concept
+- Example for "MCP protocol": "A diagram showing a phone plugging into multiple app icons via a single universal connector, like a USB-C port for AI, clean flat design, dark background"
+- Example for "RAG systems": "A librarian robot pulling books from shelves and handing pages to a person, minimalist illustration, dark teal background"
+- Include: subject, action or metaphor, art style, colour palette, mood
+- No text or letters in the image
+- Max 2 sentences
+
+Return the prompt only."""
 
     response = client.chat.completions.create(
         model=DEPLOYMENT,
@@ -151,7 +160,7 @@ if __name__ == "__main__":
     x_thread = generate_x_thread(article, topic)
 
     print("Generating image prompt...", file=sys.stderr)
-    image_prompt = generate_image_prompt(topic)
+    image_prompt = generate_image_prompt(topic, article)
 
     draft = {
         "topic": topic,
