@@ -38,7 +38,6 @@ public class TopicFetchService(HttpClient httpClient, ILogger<TopicFetchService>
         {
             FetchHackerNewsAsync(ct),
             FetchCompanyBlogsAsync(ct),
-            FetchRedditAsync(ct),
             FetchYouTubeAsync(ct),
             FetchArxivAsync(ct),
         };
@@ -49,9 +48,8 @@ public class TopicFetchService(HttpClient httpClient, ILogger<TopicFetchService>
         {
             hackernews = results[0],
             company_blogs = results[1],
-            reddit = results[2],
-            youtube = results[3],
-            arxiv = results[4],
+            youtube = results[2],
+            arxiv = results[3],
         };
 
         return JsonSerializer.Serialize(combined);
