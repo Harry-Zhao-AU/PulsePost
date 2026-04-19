@@ -29,8 +29,11 @@ Here are this week's trending AI topics:
 Hacker News:
 {json.dumps(topics['hackernews'], indent=2)}
 
-GitHub Trending:
-{json.dumps(topics['github'], indent=2)}
+Official Company Blogs (Anthropic, OpenAI, Google DeepMind, Meta AI, Microsoft AI):
+{json.dumps(topics['company_blogs'], indent=2)}
+
+Reddit (r/MachineLearning, r/LocalLLaMA):
+{json.dumps(topics['reddit'], indent=2)}
 
 arXiv:
 {json.dumps(topics['arxiv'], indent=2)}

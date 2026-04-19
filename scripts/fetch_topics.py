@@ -1,4 +1,4 @@
-"""Fetches trending AI topics from HN, GitHub, and arXiv, plus existing blog posts."""
+"""Fetches trending AI topics from HN, company blogs, Reddit, and arXiv."""
 
 import json
 import os
@@ -8,10 +8,23 @@ import feedparser
 import requests
 
 HN_KEYWORDS = ["ai", "llm", "agent", "mcp", "rag", "vector", "gpt", "claude",
-               "neural", "transformer", "embedding", "copilot", "openai", "anthropic"]
+               "neural", "transformer", "embedding", "copilot", "openai", "anthropic",
+               "gemini", "mistral", "llama", "deepmind", "diffusion"]
 
-GITHUB_TOKEN = os.environ["GH_PAT"]
-HEADERS = {"Authorization": f"Bearer {GITHUB_TOKEN}", "Accept": "application/vnd.github+json"}
+COMPANY_FEEDS = [
+    {"name": "Anthropic",   "url": "https://www.anthropic.com/rss.xml"},
+    {"name": "OpenAI",      "url": "https://openai.com/blog/rss.xml"},
+    {"name": "Google DeepMind", "url": "https://deepmind.google/blog/rss.xml"},
+    {"name": "Meta AI",     "url": "https://ai.meta.com/blog/rss/"},
+    {"name": "Microsoft AI","url": "https://blogs.microsoft.com/ai/feed/"},
+]
+
+REDDIT_SUBREDDITS = ["MachineLearning", "LocalLLaMA"]
+
+GH_HEADERS = {
+    "Authorization": f"Bearer {os.environ['GH_PAT']}",
+    "Accept": "application/vnd.github+json",
+}
 
 
 def fetch_hacker_news():
@@ -39,29 +52,50 @@ def fetch_hacker_news():
     return sorted(results, key=lambda x: x["score"], reverse=True)[:5]
 
 
-def fetch_github_trending():
-    response = requests.get(
-        "https://api.github.com/search/repositories",
-        params={
-            "q": "topic:llm stars:>100 pushed:>2026-04-01",
-            "sort": "stars",
-            "order": "desc",
-            "per_page": 5,
-        },
-        headers=HEADERS,
-        timeout=10,
-    ).json()
+def fetch_company_blogs():
+    results = []
+    for company in COMPANY_FEEDS:
+        try:
+            feed = feedparser.parse(company["url"])
+            for entry in feed.entries[:3]:
+                results.append({
+                    "source": "company_blog",
+                    "company": company["name"],
+                    "title": entry.get("title", ""),
+                    "url": entry.get("link", ""),
+                    "summary": entry.get("summary", "")[:300],
+                    "published": entry.get("published", ""),
+                })
+        except Exception as e:
+            print(f"Failed to fetch {company['name']}: {e}", file=sys.stderr)
 
-    return [
-        {
-            "source": "github",
-            "title": r["full_name"],
-            "description": r.get("description") or "",
-            "stars": r["stargazers_count"],
-            "url": r["html_url"],
-        }
-        for r in response.get("items", [])
-    ]
+    return results
+
+
+def fetch_reddit():
+    results = []
+    headers = {"User-Agent": "PulsePost/1.0"}
+    for subreddit in REDDIT_SUBREDDITS:
+        try:
+            response = requests.get(
+                f"https://www.reddit.com/r/{subreddit}/hot.json?limit=5",
+                headers=headers,
+                timeout=10,
+            ).json()
+            for post in response["data"]["children"]:
+                data = post["data"]
+                results.append({
+                    "source": "reddit",
+                    "subreddit": subreddit,
+                    "title": data["title"],
+                    "url": f"https://reddit.com{data['permalink']}",
+                    "score": data["score"],
+                    "num_comments": data["num_comments"],
+                })
+        except Exception as e:
+            print(f"Failed to fetch r/{subreddit}: {e}", file=sys.stderr)
+
+    return sorted(results, key=lambda x: x["score"], reverse=True)[:5]
 
 
 def fetch_arxiv():
@@ -70,6 +104,7 @@ def fetch_arxiv():
         {
             "source": "arxiv",
             "title": entry.title,
+            "url": entry.get("link", ""),
             "description": entry.get("summary", "")[:300],
         }
         for entry in feed.entries[:8]
@@ -79,7 +114,7 @@ def fetch_arxiv():
 def fetch_existing_posts():
     response = requests.get(
         "https://api.github.com/repos/Harry-Zhao-AU/harry-zhao-au.github.io/contents/_posts",
-        headers=HEADERS,
+        headers=GH_HEADERS,
         timeout=10,
     )
     if response.status_code != 200:
@@ -88,11 +123,14 @@ def fetch_existing_posts():
 
 
 if __name__ == "__main__":
-    print("Fetching HN...", file=sys.stderr)
+    print("Fetching Hacker News...", file=sys.stderr)
     hn = fetch_hacker_news()
 
-    print("Fetching GitHub...", file=sys.stderr)
-    gh = fetch_github_trending()
+    print("Fetching company blogs (Anthropic, OpenAI, Google, Meta, Microsoft)...", file=sys.stderr)
+    company = fetch_company_blogs()
+
+    print("Fetching Reddit (r/MachineLearning, r/LocalLLaMA)...", file=sys.stderr)
+    reddit = fetch_reddit()
 
     print("Fetching arXiv...", file=sys.stderr)
     arxiv = fetch_arxiv()
@@ -102,7 +140,8 @@ if __name__ == "__main__":
 
     output = {
         "hackernews": hn,
-        "github": gh,
+        "company_blogs": company,
+        "reddit": reddit,
         "arxiv": arxiv,
         "existing_posts": existing,
     }
