@@ -127,16 +127,21 @@ def generate_image_prompt(topic: dict, article: str) -> str:
 Article title: {topic['title']}
 Article content (first 600 chars): {article[:600]}
 
-Your job: Extract the CORE WORKFLOW or ARCHITECTURE described in this article and visualise it as a clean technical diagram or system illustration.
+Your job: Extract one of the following from the article — whichever best represents its core idea — and visualise it as a clean technical illustration:
+
+- **WORKFLOW** — a sequence of steps or data flow (e.g. request → process → response)
+- **ARCHITECTURE** — system components and how they connect (e.g. layers, services, APIs)
+- **PILLARS** — the key principles or concepts the article is built around (e.g. 3-4 named pillars displayed as columns or blocks)
 
 Steps:
-1. Identify the key components, steps, or layers in the system/workflow described
-2. Describe how they connect or flow (e.g. "request flows left to right", "three layers stacked vertically")
-3. Write a DALL-E prompt that renders this as a clean architectural diagram
+1. Decide which of the three fits best for this article
+2. Identify the specific named components, steps, or pillars from the article content
+3. Describe the layout and flow clearly so DALL-E can render it accurately
 
 Good examples:
-- "A clean architecture diagram showing three horizontal layers: a user request at top, a middle orchestration layer with labeled boxes for Tool Caller, Memory, and Planner, and a bottom layer of external APIs. Dark background, white and teal labels, minimalist flat design."
-- "A flowchart showing a message entering an LLM, branching into two parallel paths labeled Read and Write, then merging at a response node. Monochrome with amber highlights, dark navy background."
+- Workflow: "A left-to-right flowchart: User Request → Orchestrator → Tool Caller → External API → Response. Dark navy background, white boxes, teal arrows, flat technical style."
+- Architecture: "Three vertical layers stacked: top layer labeled 'API Gateway', middle labeled 'Event Bus with Kafka', bottom labeled 'Microservices'. Connecting arrows between layers. Dark background, monochrome with amber highlights."
+- Pillars: "Four stone columns side by side, each labeled: Observability, Resilience, Scalability, Security. Clean flat illustration, dark slate background, white serif labels."
 
 BANNED (do not use):
 - People, developers, human figures
