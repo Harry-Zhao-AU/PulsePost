@@ -26,7 +26,7 @@ public class TopicFetchService(HttpClient httpClient, ILogger<TopicFetchService>
         ("Yannic Kilcher", "UCZHmQk67mSJgfCCTn7xBfew"),
         ("Two Minute Papers", "UCbfYPyITQ-7l4upoX8nvctg"),
         ("AI Explained", "UCNJ1Ymd5yFuUPtn21xtRbbw"),
-        ("Matt Wolfe", "UCb_X2sCuGPRMf4_A3K0H_cw"),
+        ("Matt Wolfe", "UChpleBmo18P08aKCIgti38g"),
         ("Google DeepMind", "UCP7jMXSY2xbc3KCAE0MHQ-A"),
         ("Lex Fridman", "UCSHZKyawb77ixDdsGog4iWA"),
     ];
