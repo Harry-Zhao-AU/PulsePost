@@ -67,17 +67,21 @@ categories: [AI, Engineering]
 """
     content = front_matter + draft["article"]
 
+    branch_name = f"article/{date_str}-{slug}"
+    main_sha = blog_repo.get_branch("main").commit.sha
+    blog_repo.create_git_ref(ref=f"refs/heads/{branch_name}", sha=main_sha)
+
     blog_repo.create_file(
         path=filename,
         message=f"Add article: {draft['title']}",
         content=content,
-        branch="main",
+        branch=branch_name,
     )
 
     pr = blog_repo.create_pull(
         title=f"Article: {draft['title']}",
         body=f"## New Article\n\n**Image Prompt:**\n```\n{draft['image_prompt']}\n```\n\nGenerate image, upload to `assets/images/`, update front matter, then merge.",
-        head="main",
+        head=branch_name,
         base="main",
     )
 

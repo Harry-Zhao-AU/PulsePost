@@ -33,11 +33,30 @@ public class PublishService(HttpClient httpClient, ILogger<PublishService> logge
 
         var content = Convert.ToBase64String(Encoding.UTF8.GetBytes(frontMatter + article));
 
+        var branch = $"article/{date}-{slug}";
+
+        var mainShaResponse = await httpClient.GetAsync(
+            $"https://api.github.com/repos/{BlogRepo}/git/ref/heads/main", ct);
+        mainShaResponse.EnsureSuccessStatusCode();
+        var mainShaDoc = JsonDocument.Parse(await mainShaResponse.Content.ReadAsStringAsync(ct));
+        var mainSha = mainShaDoc.RootElement.GetProperty("object").GetProperty("sha").GetString();
+
+        var createBranchPayload = new { @ref = $"refs/heads/{branch}", sha = mainSha };
+        var branchResponse = await httpClient.PostAsync(
+            $"https://api.github.com/repos/{BlogRepo}/git/refs",
+            new StringContent(JsonSerializer.Serialize(createBranchPayload), Encoding.UTF8, "application/json"),
+            ct);
+        if (!branchResponse.IsSuccessStatusCode)
+        {
+            logger.LogError("Failed to create branch: {Status}", branchResponse.StatusCode);
+            return;
+        }
+
         var createFilePayload = new
         {
             message = $"Add article: {title}",
             content,
-            branch = "main"
+            branch
         };
 
         var createResponse = await httpClient.PutAsync(
@@ -55,8 +74,8 @@ public class PublishService(HttpClient httpClient, ILogger<PublishService> logge
         {
             title = $"Article: {title}",
             body = $"## New Article\n\n**Image Prompt:**\n```\n{imagePrompt}\n```\n\nGenerate image, upload to `assets/images/`, update front matter, then merge.",
-            head = "main",
-            base_ = "main"
+            head = branch,
+            @base = "main"
         };
 
         var prResponse = await httpClient.PostAsync(
