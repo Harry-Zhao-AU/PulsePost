@@ -1,9 +1,7 @@
 name: Generate Article
 
 on:
-  schedule:
-    - cron: '0 22 * * 0'  # Sunday 8am AEST (UTC+10)
-  workflow_dispatch:       # Manual trigger
+  workflow_dispatch:       # Manual trigger only — Phase 2 (Azure Functions) handles scheduled runs
 
 jobs:
   generate:
